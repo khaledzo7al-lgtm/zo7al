@@ -23,7 +23,7 @@ const ISLANDS = [
   { code: '0633-4212-9611', title: 'سنايبرات زحل' },
   { code: '3325-4001-0926', title: 'SOLO SCRIMS GALAXY' },
   { code: '4904-5829-1966', title: 'ALL WEAPONS' },
-  { code: '6387-4453-1682', title: 'حرب الكلانات' },
+  { code: '6995-1684-7602', title: '1v1v1 Reload' },
   { code: '2994-5126-9804', title: 'Best 1v1 Map' },
   { code: '3310-5985-8629', title: 'أحمر مقابل أزرق' },
   { code: '2404-2844-7787', title: 'عاركني بالبناء' },
@@ -152,17 +152,17 @@ export function SocialsScene({ t, duration, language = 'ar' }: SceneProps) {
 }
 
 const RANKS = [
-  { name: 'VIP', image: '/video/rank-vip.png' },
-  { name: 'VIP+', image: '/video/rank-vipp.png' },
-  { name: 'VIP++', image: '/video/rank-vippp.png' },
-  { name: 'MVP', image: '/video/rank-mvp.png' },
-  { name: 'MVP+', image: '/video/rank-mvpp.png' },
-  { name: 'MVP++', image: '/video/rank-mvppp.png' },
+  { name: 'VIP', image: '/video/rank-vip.png', tier: 'vip' as const },
+  { name: 'VIP+', image: '/video/rank-vipp.png', tier: 'vip' as const },
+  { name: 'VIP++', image: '/video/rank-vippp.png', tier: 'vip' as const },
+  { name: 'MVP', image: '/video/rank-mvp.png', tier: 'mvp' as const },
+  { name: 'MVP+', image: '/video/rank-mvpp.png', tier: 'mvp' as const },
+  { name: 'MVP++', image: '/video/rank-mvppp.png', tier: 'mvp' as const },
 ]
 
 export function StoreScene({ t, duration, language = 'ar' }: SceneProps) {
   return (
-    <SceneShell t={t} duration={duration} accent={ORANGE} glowPosition="50% 70%">
+    <SceneShell t={t} duration={duration} accent={ORANGE} glowPosition="50% 65%">
       <div className="flex h-full flex-col items-center justify-center px-[150px] text-center">
         <Reveal t={t} at={0.2} className="flex justify-center">
           <Eyebrow accent={ORANGE}>{tr(language, 'storeEyebrow')}</Eyebrow>
@@ -173,29 +173,43 @@ export function StoreScene({ t, duration, language = 'ar' }: SceneProps) {
           words={tr(language, 'storeTitle').split('|')}
           accentIndex={2}
           accent={ORANGE}
-          className="mt-5 text-[110px] font-bold leading-[1.1] text-white"
+          className="mt-6 text-[100px] font-bold leading-[1.1] text-white"
         />
-        <div dir="ltr" className="mt-10 grid grid-cols-3 gap-6">
+
+        <div dir="ltr" className="mt-12 grid grid-cols-3 gap-7">
           {RANKS.map((rank, i) => {
-            const p = easeOutBack(progress(t, 0.8 + i * 0.12, 0.85))
+            const p = easeOutBack(progress(t, 0.7 + i * 0.1, 0.85))
             const float = Math.sin(t * 2 + i) * 6
+            const isVip = rank.tier === 'vip'
             return (
               <div
                 key={rank.name}
-                className="flex w-[440px] items-center justify-center rounded-[28px] border border-[#ff7a00]/20 px-6 py-4"
+                className="flex h-[180px] w-[430px] items-center justify-center rounded-[28px] bg-[#11141b]/80 px-8 py-5 backdrop-blur-sm"
                 style={{
                   opacity: Math.min(1, Math.max(0, p)),
-                  transform: `translateY(${(1 - p) * 120 + float}px) scale(${Math.max(0, p)})`,
-                  background: 'radial-gradient(ellipse at 50% 60%, rgba(255,122,0,0.22), #11141b 70%)',
-                  boxShadow: '0 0 60px rgba(255,122,0,0.14)',
+                  transform: `translateY(${(1 - p) * 90 + float}px) scale(${Math.max(0, p)})`,
+                  border: isVip ? '1px solid rgba(74, 222, 128, 0.25)' : '1px solid rgba(255, 122, 0, 0.25)',
+                  boxShadow: isVip
+                    ? '0 20px 50px rgba(0,0,0,0.5), 0 0 50px rgba(74, 222, 128, 0.12)'
+                    : '0 20px 50px rgba(0,0,0,0.5), 0 0 50px rgba(255, 122, 0, 0.14)',
                 }}
               >
-                <img src={rank.image} alt={rank.name} className="aspect-[666/375] w-full object-contain" />
+                <img
+                  src={rank.image}
+                  alt={rank.name}
+                  className="max-h-[115px] w-auto object-contain"
+                  style={{
+                    filter: isVip
+                      ? 'drop-shadow(0 10px 24px rgba(74, 222, 128, 0.28))'
+                      : 'drop-shadow(0 10px 24px rgba(255, 122, 0, 0.28))',
+                  }}
+                />
               </div>
             )
           })}
         </div>
-        <Reveal t={t} at={2.2} className="mt-10 text-[30px] text-[#c9ced6]">
+
+        <Reveal t={t} at={2.0} className="mt-12 text-[32px] text-[#c9ced6]">
           {tr(language, 'storeDesc')}
         </Reveal>
       </div>
