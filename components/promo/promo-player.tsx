@@ -8,9 +8,7 @@ import { PromoStage } from './promo-stage'
 import { getScenes, TOTAL_DURATION } from './timeline'
 import { useVideoClock } from './use-video-clock'
 import type { Language } from './types'
-import { exportMp4, VIDEO_FPS, VIDEO_HEIGHT, VIDEO_WIDTH } from './export-mp4'
-
-const STAGE_WIDTH = 1920
+import { AUDIO_URL, exportMp4, STAGE_HEIGHT, STAGE_WIDTH, VIDEO_FPS, VIDEO_SCALE } from './export-mp4'
 
 type Mp4FileHandle = {
   createWritable: () => Promise<{
@@ -41,6 +39,7 @@ const labels: Record<Language, { download: string; downloading: string; failed: 
 
 export function PromoPlayer({ language }: { language: Language }) {
   const { time, playing, toggle, seek, restart, setPlaying } = useVideoClock(TOTAL_DURATION)
+  const audioRef = useRef<HTMLAudioElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0)
@@ -58,6 +57,26 @@ export function PromoPlayer({ language }: { language: Language }) {
     observer.observe(frame)
     return () => observer.disconnect()
   }, [])
+
+  // The narration follows the same clock as the frames: play/pause is mirrored
+  // onto the element, and seeks (or unexpected drift) realign its position.
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (playing) void audio.play().catch(() => undefined)
+    else audio.pause()
+  }, [playing])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    // A rejected play() (autoplay policy) keeps the element paused; the next
+    // user gesture restarts it from the position the seek effect already set.
+    if (!audio || (playing && audio.paused)) return
+    const drift = Math.abs(audio.currentTime - time)
+    if (drift <= (playing ? 0.35 : 0.05)) return
+    const target = Number.isFinite(audio.duration) && audio.duration > 0 ? Math.min(time, audio.duration - 0.05) : time
+    audio.currentTime = Math.max(0, target)
+  }, [time, playing])
 
   const activeScene = [...scenes].reverse().find((scene) => time >= scene.start) ?? scenes[0]
   const ended = time >= TOTAL_DURATION
@@ -89,7 +108,7 @@ export function PromoPlayer({ language }: { language: Language }) {
     let fileHandle: Mp4FileHandle | undefined
 
     // Open the save prompt while the click still has a user gesture. Encoding
-    // all 840 frames can take long enough for browsers to block a late download.
+    // all 3600 frames can take long enough for browsers to block a late download.
     if (pickerWindow.showSaveFilePicker) {
       try {
         fileHandle = await pickerWindow.showSaveFilePicker({
@@ -113,7 +132,7 @@ export function PromoPlayer({ language }: { language: Language }) {
         seek(index / VIDEO_FPS)
         await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
         if (!stageRef.current) throw new Error('Video stage was removed')
-        return toCanvas(stageRef.current, { width: VIDEO_WIDTH, height: VIDEO_HEIGHT, pixelRatio: 1 })
+        return toCanvas(stageRef.current, { width: STAGE_WIDTH, height: STAGE_HEIGHT, pixelRatio: VIDEO_SCALE })
       }, setExportProgress)
       if (fileHandle) {
         const writable = await fileHandle.createWritable()
@@ -141,6 +160,7 @@ export function PromoPlayer({ language }: { language: Language }) {
 
   return (
     <div className="flex w-full flex-col gap-5">
+      <audio ref={audioRef} src={AUDIO_URL} preload="auto" aria-hidden="true" />
       <div
         ref={containerRef}
         tabIndex={0}
